@@ -1,47 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API to Clipboard Copier</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f3f4f6;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="text-center p-8 bg-white rounded-xl shadow-lg max-w-lg w-full">
-        <h1 class="text-3xl font-bold mb-4 text-gray-800">API to Clipboard Copier</h1>
-        <p class="mb-6 text-gray-600">Click the button to open a popup. The popup will fetch data from a test API and automatically copy the response to your clipboard.</p>
-        
-        <div class="flex flex-col space-y-4">
-            <!-- Button to trigger the popup -->
-            <button id="copyButton" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 px-8 rounded-lg transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-teal-300 text-lg">
-                Fetch and Copy API Data
-            </button>
-        </div>
-
-        <div id="message" class="mt-6 text-md text-gray-500 h-6"></div>
-    </div>
-
-    <script>
-        document.getElementById('copyButton').addEventListener('click', () => {
-            const messageEl = document.getElementById('message');
-            messageEl.textContent = 'Opening popup...';
-
-            // --- Define the full HTML for the popup page ---
-            const popupContent = `
-                <!DOCTYPE html>
+         <!DOCTYPE html>
                 <html lang="en">
                 <head>
                     <title>Fetching & Copying...</title>
@@ -100,33 +57,7 @@
                     <\/script>
                 </body>
                 </html>
-            `;
-
-            // --- Create the Blob and its URL ---
-            const blob = new Blob([popupContent], { type: 'text/html' });
-            const blobUrl = URL.createObjectURL(blob);
-
-            // Open the popup using the blob URL
-            const popup = window.open(blobUrl, '_blank', 'width=400,height=150,left=100,top=100');
-            
-            URL.revokeObjectURL(blobUrl);
-
-            if (!popup) {
-                messageEl.textContent = 'Popup blocked! Please allow popups.';
-            }
-        });
-
-        // Listen for the success message from the popup
-        window.addEventListener('message', (event) => {
-            const messageEl = document.getElementById('message');
-            if (event.data === 'copy_success') {
-                messageEl.textContent = '✅ API data was copied successfully!';
-                console.log('Main Page: Received confirmation from popup.');
-            } else if (event.data === 'copy_failure') {
-                messageEl.textContent = '❌ An error occurred in the popup.';
-            }
-        });
-    </script>
+           
 
 </body>
 </html>
