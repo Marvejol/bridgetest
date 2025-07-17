@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Clipboard Tool</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Universal Clipboard Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -15,65 +15,108 @@
             text-align: center;
             height: 100vh;
             margin: 0;
-            transition: background-color 0.5s ease;
-            background-color: #eef2ff; /* Light indigo background */
+            background-color: #f3f4f6;
         }
         .container {
-            padding: 2rem;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 400px;
         }
-        .message {
-            font-size: 1.25rem; /* 20px */
-            font-weight: 600;
-        }
-        .success { color: #16a34a; /* Green */ }
-        .error { color: #dc2626; /* Red */ }
-        .fetching { color: #4f46e5; /* Indigo */ }
+        .hidden { display: none; }
+        button { -webkit-appearance: none; } /* Removes default iOS button styles */
     </style>
 </head>
 <body>
     <div class="container">
-        <div id="status" class="message fetching">
-            Initializing...
+        <h1 class="text-2xl font-bold text-gray-800">Clipboard & API Tool</h1>
+        
+        <!-- Step 1: Read Clipboard and Fetch API -->
+        <div id="step1-container">
+            <p class="mt-2 text-gray-600">Click to read your clipboard and fetch API data.</p>
+            <button id="readAndFetchButton" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg disabled:opacity-50">
+                1. Read & Fetch
+            </button>
         </div>
+
+        <!-- Step 2: Copy API Response -->
+        <div id="step2-container" class="hidden">
+            <p class="mt-4 text-gray-600">Data received. Now, copy the API response.</p>
+            <textarea id="api-response-display" readonly class="mt-2 w-full h-24 p-2 border border-gray-300 rounded-md bg-gray-100"></textarea>
+            <button id="copyButton" class="mt-2 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                2. Copy API Response
+            </button>
+        </div>
+
+        <div id="status" class="mt-4 text-md font-semibold min-h-[24px]"></div>
     </div>
 
     <script>
-        // This script runs as soon as the page loads in the popup
-        window.addEventListener('load', () => {
-            const statusEl = document.getElementById('status');
-            statusEl.textContent = 'Fetching API data...';
+        const step1Container = document.getElementById('step1-container');
+        const step2Container = document.getElementById('step2-container');
+        const readAndFetchButton = document.getElementById('readAndFetchButton');
+        const copyButton = document.getElementById('copyButton');
+        const apiResponseDisplay = document.getElementById('api-response-display');
+        const statusEl = document.getElementById('status');
 
-            // 1. Fetch data from the tester API
-            fetch('https://jsonplaceholder.typicode.com/posts/1')
+        let clipboardContentFromStep1 = '';
+
+        // --- Step 1: Read and Fetch Logic ---
+        readAndFetchButton.addEventListener('click', () => {
+            statusEl.textContent = 'Reading clipboard...';
+            statusEl.className = 'mt-4 text-md font-semibold text-blue-600';
+            readAndFetchButton.disabled = true;
+
+            // Action 1: Read clipboard (requires user gesture)
+            navigator.clipboard.readText()
+                .then(text => {
+                    clipboardContentFromStep1 = text;
+                    console.log('Clipboard content read:', text);
+                    statusEl.textContent = 'Fetching API data...';
+                    // Action 2: Fetch API
+                    return fetch('https://jsonplaceholder.typicode.com/posts', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            title: 'Clipboard Data',
+                            body: clipboardContentFromStep1,
+                            userId: 1,
+                        }),
+                        headers: { 'Content-type': 'application/json; charset=UTF-8' },
+                    });
+                })
                 .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`API Error: ${response.status}`);
-                    }
+                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
                     return response.json();
                 })
                 .then(data => {
-                    statusEl.textContent = 'Copying to clipboard...';
-                    const textToCopy = JSON.stringify(data, null, 2);
-                    
-                    // 2. Write the formatted data to the clipboard
-                    return navigator.clipboard.writeText(textToCopy);
-                })
-                .then(() => {
-                    statusEl.textContent = 'Success! API Data Copied.';
-                    statusEl.classList.remove('fetching');
-                    statusEl.classList.add('success');
-                    document.body.style.backgroundColor = '#dcfce7'; // Light green
+                    apiResponseDisplay.value = JSON.stringify(data, null, 2);
+                    step1Container.classList.add('hidden');
+                    step2Container.classList.remove('hidden');
+                    statusEl.textContent = 'Ready to copy API response.';
+                    statusEl.className = 'mt-4 text-md font-semibold text-gray-600';
                 })
                 .catch(err => {
-                    console.error('An error occurred:', err);
+                    // This will catch both clipboard read errors and fetch errors
                     statusEl.textContent = `Error: ${err.message}`;
-                    statusEl.classList.remove('fetching');
-                    statusEl.classList.add('error');
-                    document.body.style.backgroundColor = '#fee2e2'; // Light red
+                    statusEl.className = 'mt-4 text-md font-semibold text-red-600';
+                    readAndFetchButton.disabled = false;
+                    console.error('Step 1 failed:', err);
+                });
+        });
+
+        // --- Step 2: Copy Logic ---
+        copyButton.addEventListener('click', () => {
+            // Action 3: Write to clipboard (requires another user gesture)
+            navigator.clipboard.writeText(apiResponseDisplay.value)
+                .then(() => {
+                    statusEl.textContent = 'Success! API Response Copied.';
+                    statusEl.className = 'mt-4 text-md font-semibold text-green-600';
+                    copyButton.textContent = 'Copied!';
+                    setTimeout(() => window.close(), 2000);
                 })
-                .finally(() => {
-                    // Close the popup after a delay
-                    setTimeout(() => window.close(), 4000);
+                .catch(err => {
+                    statusEl.textContent = 'Copy failed. Please try again.';
+                    statusEl.className = 'mt-4 text-md font-semibold text-red-600';
+                    console.error('Clipboard write failed:', err);
                 });
         });
     </script>
